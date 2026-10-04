@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login Kasir - Modern Bakery</title>
+    <title>Masuk - Modern Bakery</title>
 
     <style>
         * {
@@ -91,19 +91,24 @@
 
         <div class="logo">MODERN BAKERY</div>
 
-        <div class="subtitle">
-            Login Kasir
-        </div>
+        <div class="subtitle">Masuk ke akun Modern Bakery</div>
 
-        <form>
-            <label>Email</label>
-            <input type="email" placeholder="Masukkan email">
+        @if ($errors->any())
+            <div role="alert" style="margin-bottom: 18px; color: #9b2525;">
+                {{ $errors->first() }}
+            </div>
+        @endif
 
-            <label>Password</label>
-            <input type="password" placeholder="Masukkan password">
+        <form method="POST" action="{{ route('login.process') }}">
+            @csrf
+            <label for="username">Username</label>
+            <input id="username" name="username" type="text" value="{{ old('username') }}" placeholder="Masukkan username" autocomplete="username" required autofocus>
+
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" placeholder="Masukkan password" autocomplete="current-password" required>
 
             <button type="submit">
-                Login
+                Masuk
             </button>
         </form>
 
