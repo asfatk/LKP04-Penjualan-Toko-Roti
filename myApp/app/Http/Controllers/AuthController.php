@@ -10,6 +10,9 @@ use Illuminate\View\View;
 
 class AuthController extends Controller
 {
+    /**
+     * Menampilkan halaman login.
+     */
     public function showLogin(): View|RedirectResponse
     {
         if (Auth::check()) {
@@ -19,6 +22,9 @@ class AuthController extends Controller
         return view('login');
     }
 
+    /**
+     * Memproses login pengguna.
+     */
     public function login(Request $request): RedirectResponse
     {
         $credentials = $request->validate([
@@ -28,40 +34,81 @@ class AuthController extends Controller
 
         if (! Auth::attempt($credentials, $request->boolean('remember'))) {
             return back()
-                ->withErrors(['username' => 'Username atau password salah.'])
+                ->withErrors([
+                    'username' => 'Username atau password salah.',
+                ])
                 ->onlyInput('username');
         }
 
         $user = Auth::user();
 
-        if (! in_array($user->role, ['owner', 'admin', 'kasir'], true)) {
+        // Role yang diizinkan masuk ke sistem.
+        $allowedRoles = [
+            'owner',
+            'admin',
+            'kasir',
+            'admin_kasir',
+        ];
+
+        if (! in_array($user->role, $allowedRoles, true)) {
             Auth::logout();
 
-            return back()
-                ->withErrors(['username' => 'Akun tidak memiliki role yang valid.'])
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()
+                ->route('login')
+                ->withErrors([
+                    'username' => 'Role akun tidak dikenali.',
+                ])
                 ->onlyInput('username');
         }
 
+        // Membuat ulang session setelah login berhasil.
         $request->session()->regenerate();
 
         return $this->dashboardRedirect($user);
     }
 
+    /**
+     * Memproses logout pengguna.
+     */
     public function logout(Request $request): RedirectResponse
     {
         Auth::logout();
+
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
         return redirect()->route('login');
     }
 
+    /**
+     * Menampilkan halaman profil pengguna.
+     */
+    public function profile(): View
+    {
+        $user = Auth::user();
+
+        return view('profile.index', compact('user'));
+    }
+
+    /**
+     * Mengarahkan pengguna sesuai role.
+     */
     private function dashboardRedirect(User $user): RedirectResponse
     {
-        return redirect()->route(match ($user->role) {
-            'owner' => 'owner.dashboard',
-            'kasir' => 'kasir.dashboard',
-            default => 'admin.dashboard',
-        });
+        switch ($user->role) {
+            case 'owner':
+                return redirect()->route('owner.dashboard');
+
+            case 'admin':
+            case 'kasir':
+            case 'admin_kasir':
+                return redirect()->route('admin.dashboard');
+
+            default:
+                abort(403, 'Role akun tidak dikenali.');
+        }
     }
 }

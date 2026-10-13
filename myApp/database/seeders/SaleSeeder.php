@@ -12,7 +12,7 @@ class SaleSeeder extends Seeder
     {
         $users = User::all();
 
-        foreach ($users->take(3) as $user) {
+        foreach ($users->take(2) as $user) {
             Sale::create([
                 'user_id' => $user->id,
                 'tanggal' => now(),
